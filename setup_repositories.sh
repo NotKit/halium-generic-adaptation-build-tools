@@ -227,10 +227,25 @@ setup_ramdisk() {
     fi
 }
 
+setup_dtbtool() {
+    if [ "$deviceinfo_bootimg_qcdt" == "true" ] && [ "$deviceinfo_bootimg_qcdt_type" == "qcom" ]; then
+        print_header "Setting up dtbTool"
+        if [ ! -f "dtbTool" ]; then
+            curl -L -o "dtbTool" "https://raw.githubusercontent.com/loicpoulain/skales/c2bfa15aa5bfc4e3f1b32de28e327b80b37db1cf/dtbTool"
+            chmod +x "dtbTool"
+            sed -i 's/python$/python3/' "dtbTool"
+            sed -i "s/ctypes.CDLL('libfdt.so')/ctypes.CDLL('libfdt.so.1')/" "dtbTool"
+        else
+            print_info "dtbTool already exists"
+        fi
+    fi
+}
+
 cd "$TMPDOWN"
     setup_gcc
     setup_clang
     setup_tooling
+    setup_dtbtool
     setup_ramdisk
     setup_kernel
 

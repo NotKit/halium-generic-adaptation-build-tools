@@ -61,6 +61,33 @@ then
 fi
 ls "$OUT/arch/$ARCH/boot/"*Image*
 
+if [ "$deviceinfo_bootimg_qcdt" == "true" ] && [ "$deviceinfo_bootimg_qcdt_type" == "qcom" ]; then
+    echo "Generating dt.img for QCDT boot.img format..."
+    DTBTOOL="$TMPDOWN/dtbTool"
+
+    # Locate dtc binary from kernel build or system
+    DTC_BIN="$OUT/scripts/dtc/dtc"
+    if [ ! -f "$DTC_BIN" ]; then
+        DTC_BIN=$(which dtc)
+    fi
+
+    # Locate DTS directory
+    DTB_DIR="$OUT/arch/$ARCH/boot/dts/"
+    if ! ls "$DTB_DIR"/*.dtb >/dev/null 2>&1; then
+        DTB_DIR="$OUT/arch/$ARCH/boot/"
+    fi
+
+    echo "Running dtbTool..."
+    "$DTBTOOL" -o "$OUT/arch/$ARCH/boot/dt.img" -s 2048 -p "$DTC_BIN" "$DTB_DIR"
+
+    if [ -f "$OUT/arch/$ARCH/boot/dt.img" ]; then
+        echo "dt.img generated successfully."
+    else
+        echo "Failed to generate dt.img!"
+        exit 1
+    fi
+fi
+
 if [ -n "$deviceinfo_kernel_apply_overlay" ] && $deviceinfo_kernel_apply_overlay; then
     ${TMPDOWN}/ufdt_apply_overlay "$OUT/arch/arm64/boot/dts/qcom/${deviceinfo_kernel_appended_dtb}.dtb" \
         "$OUT/arch/arm64/boot/dts/qcom/${deviceinfo_kernel_dtb_overlay}.dtbo" \

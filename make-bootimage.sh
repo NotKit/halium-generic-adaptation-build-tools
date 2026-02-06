@@ -175,6 +175,8 @@ if [ -n "$deviceinfo_bootimg_prebuilt_dt" ]; then
 elif [ -n "$deviceinfo_bootimg_dt" ]; then
     PREFIX=$KERNEL_OBJ/arch/$ARCH/boot
     DT="$PREFIX/$deviceinfo_bootimg_dt"
+elif [ "$deviceinfo_bootimg_qcdt" == "true" ]; then
+    DT="$KERNEL_OBJ/arch/$ARCH/boot/dt.img"
 fi
 
 if [ -n "$deviceinfo_prebuilt_dtbo" ]; then
