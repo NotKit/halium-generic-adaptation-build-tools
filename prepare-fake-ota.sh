@@ -43,40 +43,43 @@ case "${deviceinfo_ubuntu_touch_release:-focal}" in
 esac
 ROOTFS_URL=${ROOTFS_URL:-$DEFAULT_ROOTFS_URL}
 OTA_CHANNEL=${OTA_CHANNEL:-$DEFAULT_OTA_CHANNEL}
+
 DEVICE_GENERIC_URL_BASE='https://ci.ubports.com/job/UBportsCommunityPortsJenkinsCI/job/ubports%252Fporting%252Fcommunity-ports%252Fjenkins-ci%252Fgeneric_arm64/job'
 
-# shellcheck disable=SC2154
-case "$deviceinfo_halium_version" in
-    9)
-        DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/main/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
-        ;;
-    10)
-        # shellcheck disable=SC2154
-        case "$deviceinfo_arch" in
-            arm) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-10.0-arm32/lastSuccessfulBuild/artifact/halium_halium_arm.tar.xz";;
-            aarch64) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-10.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz";;
-        esac
-        ;;
-    11)
-        DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-11.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
-        ;;
-    12)
-        DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-12.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
-        ;;
-    13)
-        case "$deviceinfo_arch" in
-            arm) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-13.0-arm32/lastSuccessfulBuild/artifact/halium_halium_arm.tar.xz";;
-            aarch64) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-13.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz";;
-        esac
-        ;;
-    14)
-        DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-14.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
-        ;;
-    *)
-        print_error "Unsupported halium version: '$deviceinfo_halium_version'"
-        exit 1
-        ;;
-esac
+if [ -z "$DEVICE_GENERIC_URL" ]; then
+    # shellcheck disable=SC2154
+    case "$deviceinfo_halium_version" in
+        9)
+            DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/main/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
+            ;;
+        10)
+            # shellcheck disable=SC2154
+            case "$deviceinfo_arch" in
+                arm) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-10.0-arm32/lastSuccessfulBuild/artifact/halium_halium_arm.tar.xz";;
+                aarch64) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-10.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz";;
+            esac
+            ;;
+        11)
+            DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-11.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
+            ;;
+        12)
+            DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-12.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
+            ;;
+        13)
+            case "$deviceinfo_arch" in
+                arm) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-13.0-arm32/lastSuccessfulBuild/artifact/halium_halium_arm.tar.xz";;
+                aarch64) DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-13.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz";;
+            esac
+            ;;
+        14)
+            DEVICE_GENERIC_URL="$DEVICE_GENERIC_URL_BASE/halium-14.0/lastSuccessfulBuild/artifact/halium_halium_arm64.tar.xz"
+            ;;
+        *)
+            print_error "Unsupported halium version: '$deviceinfo_halium_version'"
+            exit 1
+            ;;
+    esac
+fi
 
 DEVICE_TARBALL="$1"
 OUTPUT="$2"
@@ -152,14 +155,16 @@ touch "$OUTPUT/$file.asc"
 echo "update $file $file.asc" >> "$OUTPUT/ubuntu_command"
 
 # Device-generic tarball (Halium GSI)
-file=$(basename "$DEVICE_GENERIC_URL")
-if [ -f "$OUTPUT/$file" ]; then
-    print_info "File ("$OUTPUT/$file") already exists, skipping download."
-else
-    download_file "$DEVICE_GENERIC_URL" "$OUTPUT"
+if [ -n "$DEVICE_GENERIC_URL" ] && [ "$DEVICE_GENERIC_URL" != "none" ]; then
+    file=$(basename "$DEVICE_GENERIC_URL")
+    if [ -f "$OUTPUT/$file" ]; then
+        print_info "File ("$OUTPUT/$file") already exists, skipping download."
+    else
+        download_file "$DEVICE_GENERIC_URL" "$OUTPUT"
+    fi
+    touch "$OUTPUT/$file.asc"
+    echo "update $file $file.asc" >> "$OUTPUT/ubuntu_command"
 fi
-touch "$OUTPUT/$file.asc"
-echo "update $file $file.asc" >> "$OUTPUT/ubuntu_command"
 
 # Device tarball
 file=$(basename "$DEVICE_TARBALL")
